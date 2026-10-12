@@ -121,6 +121,12 @@ mantener). Los botones se leen globalmente: teclado, raton, mandos Xbox (XInput)
 
 Mundo, cabeza, mando izquierdo/derecho, mano izquierda/derecha o un tracker (Vive/Tundra).
 
+## Licencia
+
+[MIT](LICENSE). Los componentes de terceros (OpenVR, CommunityToolkit.Mvvm, Vortice) conservan sus propias licencias,
+recogidas en [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md). No tiene relacion con *Reality Mixer* de Reality Inside Ltd.;
+es una implementacion independiente que no usa su codigo ni sus recursos.
+
 ## Estado
 
 - Probado sin visor (`--selftest`, 87 comprobaciones): matematica, shader, chroma key, colores, mascaras, activacion, colocacion,
