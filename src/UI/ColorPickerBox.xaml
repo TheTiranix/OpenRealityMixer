@@ -1,0 +1,23 @@
+<UserControl x:Class="OpenRealityMixer.UI.ColorPickerBox"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ui="clr-namespace:OpenRealityMixer.UI"
+             x:Name="Root">
+    <StackPanel>
+        <DockPanel>
+            <Border x:Name="Swatch" DockPanel.Dock="Left" Width="30" Height="24" Margin="0,0,8,0"
+                    BorderBrush="#6B7280" BorderThickness="1" CornerRadius="2" />
+            <TextBox x:Name="HexBox" DockPanel.Dock="Left" Width="86" MaxLength="9" VerticalContentAlignment="Center"
+                     ToolTip="Escribe un color como #FF00FF (tambien vale FF00FF o #F0F). Se aplica al instante."
+                     TextChanged="HexBox_TextChanged" LostFocus="HexBox_LostFocus" KeyDown="HexBox_KeyDown" />
+            <WrapPanel x:Name="PresetPanel" Margin="8,0,0,0" VerticalAlignment="Center" />
+        </DockPanel>
+        <Expander Header="Ajuste fino (rojo, verde, azul)" Margin="0,4,0,0" IsExpanded="False">
+            <StackPanel Margin="0,4,0,0">
+                <ui:SliderRow Label="Rojo" Value="{Binding R, ElementName=Root, Mode=TwoWay}" Minimum="0" Maximum="255" Step="1" />
+                <ui:SliderRow Label="Verde" Value="{Binding G, ElementName=Root, Mode=TwoWay}" Minimum="0" Maximum="255" Step="1" />
+                <ui:SliderRow Label="Azul" Value="{Binding B, ElementName=Root, Mode=TwoWay}" Minimum="0" Maximum="255" Step="1" />
+            </StackPanel>
+        </Expander>
+    </StackPanel>
+</UserControl>

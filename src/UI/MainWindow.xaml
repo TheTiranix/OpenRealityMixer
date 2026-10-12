@@ -1,0 +1,382 @@
+<Window x:Class="OpenRealityMixer.UI.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ui="clr-namespace:OpenRealityMixer.UI"
+        xmlns:core="clr-namespace:OpenRealityMixer.Core"
+        Title="OpenRealityMixer" Width="1100" Height="780" MinWidth="880" MinHeight="560"
+        Background="#F3F4F6" FontFamily="Segoe UI" FontSize="13"
+        UseLayoutRounding="True" TextOptions.TextFormattingMode="Display">
+
+    <Window.Resources>
+        <ui:VisibleWhenConverter x:Key="VisibleWhen" />
+        <ui:HexBrushConverter x:Key="HexBrush" />
+        <BooleanToVisibilityConverter x:Key="BoolVis" />
+
+        <Style TargetType="TextBox"><Setter Property="Padding" Value="3,2" /></Style>
+        <Style TargetType="Button"><Setter Property="Padding" Value="10,4" /><Setter Property="Margin" Value="0,0,6,0" /></Style>
+        <Style TargetType="ComboBox"><Setter Property="Padding" Value="4,3" /></Style>
+
+        <Style x:Key="Field" TargetType="HeaderedContentControl">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="HeaderedContentControl">
+                        <Grid Margin="0,3">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="150" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <ContentPresenter ContentSource="Header" VerticalAlignment="Center" />
+                            <ContentPresenter Grid.Column="1" />
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="Section" TargetType="Expander">
+            <Setter Property="IsExpanded" Value="True" />
+            <Setter Property="Margin" Value="0,0,0,8" />
+            <Setter Property="Background" Value="White" />
+            <Setter Property="BorderBrush" Value="#D7DAE0" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Padding" Value="12,8" />
+        </Style>
+
+        <Style x:Key="Hint" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="#6B7280" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+            <Setter Property="Margin" Value="0,4,0,4" />
+        </Style>
+    </Window.Resources>
+
+    <Grid Margin="12">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- ===== Cabecera: estado y ajustes globales ===== -->
+        <Border Background="White" BorderBrush="#D7DAE0" BorderThickness="1" Padding="14,10" Margin="0,0,0,10">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <Ellipse Width="12" Height="12" Margin="0,0,8,0" VerticalAlignment="Center"
+                                 Fill="{Binding StatusColor, Converter={StaticResource HexBrush}}" />
+                        <TextBlock Text="{Binding Headline}" FontSize="16" FontWeight="SemiBold" />
+                        <Button Content="Abrir SteamVR" Margin="12,0,0,0" Command="{Binding StartSteamVrCommand}"
+                                Visibility="{Binding VrConnected, Converter={StaticResource VisibleWhen}, ConverterParameter=False}" />
+                    </StackPanel>
+                    <TextBlock Text="{Binding Detail}" Foreground="#374151" Margin="20,2,0,0" TextWrapping="Wrap" />
+                    <TextBlock Text="{Binding CameraText}" Foreground="#6B7280" Margin="20,2,0,0" TextWrapping="Wrap" />
+                    <TextBlock Text="{Binding GpuText}" Foreground="#9CA3AF" Margin="20,2,0,0" />
+                </StackPanel>
+
+                <StackPanel Grid.Column="1" Width="360">
+                    <HeaderedContentControl Header="Fuente de camara" Style="{StaticResource Field}">
+                        <ComboBox ItemsSource="{x:Static ui:Options.Sources}" DisplayMemberPath="Label" SelectedValuePath="Value"
+                                  SelectedValue="{Binding Settings.CameraSource}" />
+                    </HeaderedContentControl>
+                    <HeaderedContentControl Header="Webcam" Style="{StaticResource Field}"
+                            Visibility="{Binding Settings.CameraSource, Converter={StaticResource VisibleWhen}, ConverterParameter=Webcam}">
+                        <ComboBox ItemsSource="{Binding Webcams}" SelectedItem="{Binding Settings.WebcamName}" />
+                    </HeaderedContentControl>
+                    <HeaderedContentControl Header="Color clave (Quest)" Style="{StaticResource Field}"
+                            ToolTip="El color con el que se pintan las cajas en modo 'Passthrough por color'. Debe ser el mismo que el color del chroma key en ALVR.">
+                        <ui:ColorPickerBox Color="{Binding Settings.PassthroughKeyColor}" />
+                    </HeaderedContentControl>
+                    <HeaderedContentControl Header="Tarjeta grafica" Style="{StaticResource Field}">
+                        <ComboBox ItemsSource="{Binding GpuOptions}" DisplayMemberPath="Label" SelectedValuePath="Name"
+                                  SelectedValue="{Binding Settings.GpuAdapterName}" />
+                    </HeaderedContentControl>
+                    <CheckBox Content="Ventana en la GPU de alto rendimiento (Windows)" IsChecked="{Binding WindowsHighPerformance}"
+                              Margin="0,2,0,0"
+                              ToolTip="Pone esta app en 'Alto rendimiento' en la configuracion de graficos de Windows. Hace que la ventana tambien use la GPU dedicada en vez de la integrada. Se aplica al reiniciar la app." />
+                    <TextBlock Text="{Binding GpuNote}" Style="{StaticResource Hint}" Margin="0,2,0,0" />
+                    <CheckBox Content="Iniciar con SteamVR" IsChecked="{Binding Settings.StartWithSteamVR}" Margin="0,4,0,0" />
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="270" />
+                <ColumnDefinition Width="12" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <!-- ===== Lista de cajas ===== -->
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                    <Button x:Name="AddButton" Content="+ Anadir  ▾" Click="AddButton_Click" />
+                    <Button Content="Duplicar" Command="{Binding DuplicateBoxCommand}" />
+                    <Button Content="Eliminar" Command="{Binding DeleteBoxCommand}" />
+                </StackPanel>
+
+                <ListBox Grid.Row="1" ItemsSource="{Binding Settings.Boxes}" SelectedItem="{Binding SelectedBox}"
+                         BorderBrush="#D7DAE0" HorizontalContentAlignment="Stretch">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <DockPanel Margin="2,3">
+                                <CheckBox IsChecked="{Binding Enabled}" DockPanel.Dock="Left" VerticalAlignment="Center" Margin="0,0,8,0" />
+                                <TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+                            </DockPanel>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+
+                <Border Grid.Row="2" Margin="0,8,0,0" Background="White" BorderBrush="#D7DAE0" BorderThickness="1" Padding="8">
+                    <StackPanel>
+                        <CheckBox Content="Vista previa de la camara" IsChecked="{Binding PreviewEnabled}" />
+                        <Border Height="140" Margin="0,6,0,0" Background="#111827"
+                                Visibility="{Binding PreviewEnabled, Converter={StaticResource BoolVis}}">
+                            <Image Source="{Binding PreviewImage}" Stretch="Uniform" />
+                        </Border>
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <!-- ===== Editor de la caja seleccionada ===== -->
+            <ScrollViewer Grid.Column="2" VerticalScrollBarVisibility="Auto">
+                <StackPanel>
+
+                    <Expander Header="Como funciona en Quest 3 / 3S (leer una vez)" Style="{StaticResource Section}" IsExpanded="False">
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource Hint}"><Run FontWeight="SemiBold">SteamVR no puede darle a ninguna app la camara de una Quest.</Run> Meta no entrega los pixeles al PC; solo las apps que corren dentro del visor pueden leerlos. Lo que si se puede es lo que hace Reality Mixer en Quest:</TextBlock>
+                            <TextBlock Style="{StaticResource Hint}">1) Pon las cajas en modo <Run FontWeight="SemiBold">Passthrough por color</Run>: la app pinta cada caja con un color solido.</TextBlock>
+                            <TextBlock Style="{StaticResource Hint}">2) <Run FontWeight="SemiBold">Necesitas ALVR</Run> (v20.13 o mas nueva): en su panel activa Passthrough en modo chroma key RGB y ponle el <Run FontWeight="SemiBold">mismo color</Run>. El visor sustituye ese color por la habitacion real. Steam Link no tiene un modo equivalente; con Virtual Desktop tambien funciona.</TextBlock>
+                            <TextBlock Style="{StaticResource Hint}">3) Ajusta la tolerancia del chroma key en ALVR hasta que la caja se vea limpia (el modo RGB puede dejar un borde del color; usa borde suave bajo aqui). Con Quest no hay chroma key sobre la imagen real ni ventana alineada: la realidad se ve nativa, sin latencia.</TextBlock>
+                            <Button Content="Poner todas mis cajas en modo Passthrough por color" HorizontalAlignment="Left" Command="{Binding ConvertAllToPassthroughKeyCommand}" />
+                        </StackPanel>
+                    </Expander>
+
+                    <Expander Header="Manos (hand tracking)" Style="{StaticResource Section}">
+                        <StackPanel>
+                            <CheckBox Content="Usar las manos (Steam Link, ALVR)" IsChecked="{Binding Settings.HandTrackingEnabled}" />
+                            <CheckBox Content="Mover y escalar cajas pellizcandolas" IsChecked="{Binding Settings.HandGrabEnabled}" Margin="0,4,0,0" />
+                            <ui:SliderRow Label="Distancia de pellizco (cm)" Value="{Binding Settings.PinchDistanceCm}" Minimum="1" Maximum="5" Step="0.1" />
+                            <TextBlock Text="{Binding HandsStatus}" Margin="0,6,0,0" Foreground="#374151" />
+                            <TextBlock Text="{Binding HandsLive}" Margin="0,2,0,0" FontFamily="Consolas" Foreground="#1D4ED8" TextWrapping="Wrap" />
+                            <TextBlock Style="{StaticResource Hint}">Pellizca (pulgar con indice) dentro de una caja para agarrarla y moverla: sigue a tu mano. Con la otra mano pellizcando la misma caja, separa o junta las manos para cambiar su tamano. En una caja con activacion por boton, pulsa "Asignar..." y haz el gesto (pellizco, puno, senalar, mano abierta); evita el pellizco si dejas activado mover cajas.</TextBlock>
+                            <TextBlock Style="{StaticResource Hint}">Necesita que el hand tracking de tu visor llegue a SteamVR: en Steam Link activalo en los ajustes de mandos de SteamVR; en ALVR usa el modo de emulacion de manos. Si aqui sale "no detectada", revisa eso y el registro.</TextBlock>
+                        </StackPanel>
+                    </Expander>
+
+                    <TextBlock Text="Crea una caja con '+ Anadir' para empezar." Style="{StaticResource Hint}" FontSize="14" Margin="4,12"
+                               Visibility="{Binding SelectedBox, Converter={StaticResource VisibleWhen}, ConverterParameter=!OpenRealityMixer.Core.CameraBox}" />
+
+                    <StackPanel DataContext="{Binding SelectedBox}">
+
+                        <!-- General -->
+                        <Expander Header="General" Style="{StaticResource Section}">
+                            <StackPanel>
+                                <HeaderedContentControl Header="Nombre" Style="{StaticResource Field}">
+                                    <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" />
+                                </HeaderedContentControl>
+                                <HeaderedContentControl Header="Modo de imagen" Style="{StaticResource Field}">
+                                    <ComboBox ItemsSource="{x:Static ui:Options.RenderModes}" DisplayMemberPath="Label" SelectedValuePath="Value"
+                                              SelectedValue="{Binding RenderMode}" />
+                                </HeaderedContentControl>
+                                <StackPanel Visibility="{Binding RenderMode, Converter={StaticResource VisibleWhen}, ConverterParameter=PassthroughKey}">
+                                    <CheckBox Content="Usar un color propio para esta caja (en vez del color clave global)" IsChecked="{Binding UseOwnColor}" Margin="0,4,0,0" />
+                                    <HeaderedContentControl Header="Color de esta caja" Style="{StaticResource Field}"
+                                            Visibility="{Binding UseOwnColor, Converter={StaticResource VisibleWhen}, ConverterParameter=True}">
+                                        <ui:ColorPickerBox Color="{Binding OwnColor}" />
+                                    </HeaderedContentControl>
+                                    <TextBlock Style="{StaticResource Hint}"
+                                               Visibility="{Binding UseOwnColor, Converter={StaticResource VisibleWhen}, ConverterParameter=True}"
+                                               Text="ALVR solo quita un color a la vez: una caja con un color distinto del que tienes en ALVR se vera como un panel de color solido (no como ventana a la realidad)." />
+                                </StackPanel>
+                                <TextBlock Style="{StaticResource Hint}"
+                                           Visibility="{Binding RenderMode, Converter={StaticResource VisibleWhen}, ConverterParameter=PassthroughKey}"
+                                           Text="Esta caja no usa la camara: se pinta con el color clave de arriba y el visor lo convierte en ventana. Usa borde suave bajo (0.02 - 0.08); un borde muy difuso puede dejar un halo del color." />
+                                <TextBlock Style="{StaticResource Hint}"
+                                           Visibility="{Binding RenderMode, Converter={StaticResource VisibleWhen}, ConverterParameter=Aligned}"
+                                           Text="Muestra lo que hay realmente detras de la caja, usando la camara del visor. Requiere que el visor entregue su camara a SteamVR (Index / WMR; en Quest no es posible)." />
+                            </StackPanel>
+                        </Expander>
+
+                        <!-- Posicion -->
+                        <Expander Header="Posicion y tamano" Style="{StaticResource Section}">
+                            <StackPanel>
+                                <HeaderedContentControl Header="Pegada a" Style="{StaticResource Field}">
+                                    <ComboBox ItemsSource="{x:Static ui:Options.Anchors}" DisplayMemberPath="Label" SelectedValuePath="Value"
+                                              SelectedValue="{Binding Anchor}" />
+                                </HeaderedContentControl>
+                                <HeaderedContentControl Header="Tracker" Style="{StaticResource Field}"
+                                        Visibility="{Binding Anchor, Converter={StaticResource VisibleWhen}, ConverterParameter=Tracker}">
+                                    <ComboBox IsEditable="True" Text="{Binding TrackerSerial}"
+                                              ItemsSource="{Binding DataContext.Trackers, RelativeSource={RelativeSource AncestorType=Window}}" />
+                                </HeaderedContentControl>
+
+                                <Border Background="#EEF2FF" Padding="8" Margin="0,6,0,6" CornerRadius="3">
+                                    <StackPanel>
+                                        <TextBlock Text="Colocar rapido (cuenta atras de 3 s para que te pongas en posicion)" FontWeight="SemiBold" />
+                                        <HeaderedContentControl Header="Orientacion" Style="{StaticResource Field}">
+                                            <ComboBox ItemsSource="{x:Static ui:Options.Orientations}" DisplayMemberPath="Label" SelectedValuePath="Value"
+                                                      SelectedValue="{Binding DataContext.PlaceOrientation, RelativeSource={RelativeSource AncestorType=Window}}" />
+                                        </HeaderedContentControl>
+                                        <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                                            <Button Content="Frente a mi" CommandParameter="front"
+                                                    Command="{Binding DataContext.PlaceCommand, RelativeSource={RelativeSource AncestorType=Window}}" />
+                                            <Button Content="En mi mano izq." CommandParameter="left"
+                                                    Command="{Binding DataContext.PlaceCommand, RelativeSource={RelativeSource AncestorType=Window}}" />
+                                            <Button Content="En mi mano der." CommandParameter="right"
+                                                    Command="{Binding DataContext.PlaceCommand, RelativeSource={RelativeSource AncestorType=Window}}" />
+                                        </StackPanel>
+                                        <TextBlock Text="{Binding DataContext.PlaceText, RelativeSource={RelativeSource AncestorType=Window}}" Style="{StaticResource Hint}" />
+                                    </StackPanel>
+                                </Border>
+
+                                <ui:SliderRow Label="Posicion X (m)" Value="{Binding PosX}" Minimum="-4" Maximum="4" Step="0.01" />
+                                <ui:SliderRow Label="Posicion Y / altura (m)" Value="{Binding PosY}" Minimum="-2" Maximum="3" Step="0.01" />
+                                <ui:SliderRow Label="Posicion Z (m)" Value="{Binding PosZ}" Minimum="-4" Maximum="4" Step="0.01" />
+                                <ui:SliderRow Label="Giro (yaw)" Value="{Binding Yaw}" Minimum="-180" Maximum="180" Step="1" />
+                                <ui:SliderRow Label="Inclinacion (pitch)" Value="{Binding Pitch}" Minimum="-180" Maximum="180" Step="1" />
+                                <ui:SliderRow Label="Balanceo (roll)" Value="{Binding Roll}" Minimum="-180" Maximum="180" Step="1" />
+                                <ui:SliderRow Label="Ancho (m)" Value="{Binding Width}" Minimum="0.05" Maximum="3" Step="0.01" />
+                                <ui:SliderRow Label="Alto (m)" Value="{Binding Height}" Minimum="0.05" Maximum="3" Step="0.01" />
+                                <CheckBox Content="Se puede mover y escalar con las manos (pellizco)" IsChecked="{Binding Grabbable}" Margin="0,4,0,0" />
+                            </StackPanel>
+                        </Expander>
+
+                        <!-- Forma e imagen -->
+                        <Expander Header="Forma e imagen" Style="{StaticResource Section}">
+                            <StackPanel>
+                                <HeaderedContentControl Header="Forma" Style="{StaticResource Field}">
+                                    <ComboBox ItemsSource="{x:Static ui:Options.Shapes}" DisplayMemberPath="Label" SelectedValuePath="Value"
+                                              SelectedValue="{Binding Shape}" />
+                                </HeaderedContentControl>
+                                <Border Background="#ECFDF5" BorderBrush="#A7F3D0" BorderThickness="1" Padding="8" Margin="0,6,0,6" CornerRadius="3">
+                                    <StackPanel>
+                                        <TextBlock Text="Dibujar la forma con los mandos o las manos" FontWeight="SemiBold" />
+                                        <TextBlock Style="{StaticResource Hint}">1) Pulsa <Run FontWeight="SemiBold">Dibujar ahora</Run> y ponte el visor. 2) Mantén el gatillo (o pellizca con la mano) y recorre el contorno de lo que quieres ver: alrededor del teclado, de la puerta, de un vaso. 3) Suelta: la caja se coloca sobre el trazo, se ajusta a su tamano y toma esa forma. El contorno se dibuja en el aire; si lo haces sobre una mesa o una pared, la caja queda plana contra ella.</TextBlock>
+                                        <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                                            <Button Content="Dibujar ahora" Command="{Binding DataContext.StartDrawCommand, RelativeSource={RelativeSource AncestorType=Window}}" />
+                                            <Button Content="Cancelar" Command="{Binding DataContext.CancelDrawCommand, RelativeSource={RelativeSource AncestorType=Window}}" />
+                                            <Button Content="Volver a rectangulo" Command="{Binding DataContext.ClearShapeCommand, RelativeSource={RelativeSource AncestorType=Window}}" />
+                                        </StackPanel>
+                                        <TextBlock Text="{Binding DataContext.DrawText, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                   Foreground="#047857" TextWrapping="Wrap" Margin="0,6,0,0" />
+                                        <HeaderedContentControl Header="Punta del lapiz" Style="{StaticResource Field}">
+                                            <ComboBox ItemsSource="{x:Static ui:Options.PenTips}" DisplayMemberPath="Label" SelectedValuePath="Value"
+                                                      SelectedValue="{Binding DataContext.Settings.PenTip, RelativeSource={RelativeSource AncestorType=Window}}" />
+                                        </HeaderedContentControl>
+                                        <HeaderedContentControl Header="Boton extra de dibujo" Style="{StaticResource Field}">
+                                            <DockPanel>
+                                                <Button DockPanel.Dock="Right" Margin="6,0,0,0" Content="Quitar"
+                                                        Command="{Binding DataContext.ClearDrawButtonCommand, RelativeSource={RelativeSource AncestorType=Window}}" />
+                                                <Button DockPanel.Dock="Right" Content="Asignar..."
+                                                        Command="{Binding DataContext.AssignDrawButtonCommand, RelativeSource={RelativeSource AncestorType=Window}}" />
+                                                <TextBlock Text="{Binding DataContext.DrawButtonText, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                           VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                                            </DockPanel>
+                                        </HeaderedContentControl>
+                                        <TextBlock Style="{StaticResource Hint}" Text="Ademas del gatillo y el pellizco, puedes mantener una tecla, un boton del mando de Xbox o un gesto para dibujar (dibuja con la mano derecha). Si el punto de color aparece donde no toca, cambia 'Punta del lapiz'." />
+                                    </StackPanel>
+                                </Border>
+                                <ui:SliderRow Label="Borde suave" Value="{Binding EdgeSoftness}" Minimum="0" Maximum="1" Step="0.005" />
+                                <ui:SliderRow Label="Opacidad" Value="{Binding Opacity}" Minimum="0" Maximum="1" Step="0.01" />
+                                <StackPanel Visibility="{Binding RenderMode, Converter={StaticResource VisibleWhen}, ConverterParameter=!PassthroughKey}">
+                                    <ui:SliderRow Label="Brillo" Value="{Binding Brightness}" Minimum="-0.5" Maximum="0.5" Step="0.01" />
+                                    <ui:SliderRow Label="Contraste" Value="{Binding Contrast}" Minimum="0.3" Maximum="2.5" Step="0.01" />
+                                    <ui:SliderRow Label="Saturacion" Value="{Binding Saturation}" Minimum="0" Maximum="2" Step="0.01" />
+                                    <ui:SliderRow Label="Nitidez (px por metro)" Value="{Binding PixelsPerMeter}" Minimum="200" Maximum="2000" Step="10" />
+                                    <CheckBox Content="Espejo horizontal" IsChecked="{Binding MirrorHorizontal}" Margin="0,4,0,0" />
+                                </StackPanel>
+                                <StackPanel Visibility="{Binding RenderMode, Converter={StaticResource VisibleWhen}, ConverterParameter=Flat}">
+                                    <TextBlock Text="Recorte de la imagen de la camara (0 a 1)" FontWeight="SemiBold" Margin="0,8,0,2" />
+                                    <ui:SliderRow Label="Izquierda" Value="{Binding CropX}" Minimum="0" Maximum="1" Step="0.01" />
+                                    <ui:SliderRow Label="Arriba" Value="{Binding CropY}" Minimum="0" Maximum="1" Step="0.01" />
+                                    <ui:SliderRow Label="Ancho" Value="{Binding CropW}" Minimum="0.05" Maximum="1" Step="0.01" />
+                                    <ui:SliderRow Label="Alto" Value="{Binding CropH}" Minimum="0.05" Maximum="1" Step="0.01" />
+                                </StackPanel>
+                            </StackPanel>
+                        </Expander>
+
+                        <!-- Activacion -->
+                        <Expander Header="Cuando se muestra" Style="{StaticResource Section}">
+                            <StackPanel>
+                                <HeaderedContentControl Header="Activacion" Style="{StaticResource Field}">
+                                    <ComboBox ItemsSource="{x:Static ui:Options.Activations}" DisplayMemberPath="Label" SelectedValuePath="Value"
+                                              SelectedValue="{Binding Activation}" />
+                                </HeaderedContentControl>
+                                <ui:SliderRow Label="Duracion del fundido (s)" Value="{Binding FadeSeconds}" Minimum="0" Maximum="2" Step="0.05" />
+
+                                <StackPanel Visibility="{Binding Activation, Converter={StaticResource VisibleWhen}, ConverterParameter=Proximity}">
+                                    <ui:SliderRow Label="Distancia maxima (m)" Value="{Binding ProximityDistance}" Minimum="0.2" Maximum="5" Step="0.05" />
+                                    <TextBlock Style="{StaticResource Hint}" Text="Medida desde tu cabeza hasta el centro de la caja. Se desvanece en el 25% siguiente." />
+                                </StackPanel>
+
+                                <StackPanel Visibility="{Binding Activation, Converter={StaticResource VisibleWhen}, ConverterParameter=Gaze}">
+                                    <ui:SliderRow Label="Angulo de mirada (grados)" Value="{Binding GazeAngle}" Minimum="5" Maximum="90" Step="1" />
+                                    <ui:SliderRow Label="Retardo (s)" Value="{Binding GazeDelay}" Minimum="0" Maximum="2" Step="0.05" />
+                                    <TextBlock Style="{StaticResource Hint}" Text="Aparece al mirar hacia la caja; el retardo evita que salte por accidente." />
+                                </StackPanel>
+
+                                <StackPanel Visibility="{Binding Activation, Converter={StaticResource VisibleWhen}, ConverterParameter=Button}">
+                                    <HeaderedContentControl Header="Boton" Style="{StaticResource Field}">
+                                        <DockPanel>
+                                            <Button DockPanel.Dock="Right" Margin="6,0,0,0" Content="Quitar"
+                                                    Command="{Binding DataContext.ClearButtonCommand, RelativeSource={RelativeSource AncestorType=Window}}" />
+                                            <Button DockPanel.Dock="Right" Content="Asignar..."
+                                                    Command="{Binding DataContext.AssignButtonCommand, RelativeSource={RelativeSource AncestorType=Window}}" />
+                                            <TextBlock Text="{Binding DataContext.ButtonText, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                       VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                                        </DockPanel>
+                                    </HeaderedContentControl>
+                                    <CheckBox Content="Visible solo mientras lo mantengo pulsado" IsChecked="{Binding ButtonHold}" Margin="0,4,0,0" />
+                                    <CheckBox Content="Empezar visible (modo alternar)" IsChecked="{Binding ButtonStartsVisible}" Margin="0,4,0,0"
+                                              Visibility="{Binding ButtonHold, Converter={StaticResource VisibleWhen}, ConverterParameter=False}" />
+                                    <TextBlock Style="{StaticResource Hint}" Text="Sirve cualquier tecla, boton de raton, mando Xbox, volante, HOTAS o pedal, o un gesto de mano (pellizco, puno, senalar, mano abierta); funciona aunque el juego tenga el foco." />
+                                </StackPanel>
+                            </StackPanel>
+                        </Expander>
+
+                        <!-- Chroma key -->
+                        <Expander Header="Chroma key (quitar un color de la imagen real)" Style="{StaticResource Section}" IsExpanded="False"
+                                  Visibility="{Binding RenderMode, Converter={StaticResource VisibleWhen}, ConverterParameter=!PassthroughKey}">
+                            <StackPanel>
+                                <CheckBox Content="Activar chroma key" IsChecked="{Binding ChromaEnabled}" />
+                                <HeaderedContentControl Header="Color a quitar" Style="{StaticResource Field}">
+                                    <ui:ColorPickerBox Color="{Binding KeyColor}" />
+                                </HeaderedContentControl>
+                                <ui:SliderRow Label="Similitud" Value="{Binding KeySimilarity}" Minimum="0" Maximum="0.6" Step="0.005" />
+                                <ui:SliderRow Label="Suavidad" Value="{Binding KeySmoothness}" Minimum="0.001" Maximum="0.5" Step="0.005" />
+                                <ui:SliderRow Label="Reduccion de reflejo" Value="{Binding KeySpill}" Minimum="0" Maximum="1" Step="0.01" />
+                                <TextBlock Style="{StaticResource Hint}" Text="Util con volantes o HOTAS delante de una tela verde: el verde se vuelve transparente y ves el mundo VR detras. Necesita la imagen real de la camara (Index / WMR / webcam)." />
+                            </StackPanel>
+                        </Expander>
+
+                    </StackPanel>
+
+                    <Expander Header="Calibracion y avanzado" Style="{StaticResource Section}" IsExpanded="False">
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource Hint}" Text="Solo si la imagen de la camara del visor sale invertida, con los colores cambiados o no coincide con lo que ves. Cada driver reporta la camara de forma un poco distinta." />
+                            <CheckBox Content="Invertir horizontal (camara)" IsChecked="{Binding Settings.CalibFlipU}" Margin="0,2" />
+                            <CheckBox Content="Invertir vertical (camara)" IsChecked="{Binding Settings.CalibFlipV}" Margin="0,2" />
+                            <CheckBox Content="Intercambiar rojo y azul" IsChecked="{Binding Settings.CalibSwapRedBlue}" Margin="0,2" />
+                            <ui:SliderRow Label="Escala del campo de vision" Value="{Binding Settings.CalibFovScale}" Minimum="0.5" Maximum="1.5" Step="0.005" />
+                            <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
+                                <Button Content="Reiniciar camara" Command="{Binding ReloadCameraCommand}" />
+                                <Button Content="Abrir registro" Command="{Binding OpenLogCommand}" />
+                            </StackPanel>
+                            <CheckBox Content="Iniciar minimizada" IsChecked="{Binding Settings.StartMinimized}" Margin="0,8,0,0" />
+                        </StackPanel>
+                    </Expander>
+
+                </StackPanel>
+            </ScrollViewer>
+        </Grid>
+    </Grid>
+</Window>
